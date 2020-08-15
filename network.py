@@ -2,6 +2,48 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import idx2numpy
+from PIL import ImageTk, Image, ImageDraw
+import PIL
+from tkinter import *
+
+def trunc(values, decs=0):
+    return np.trunc(values*10**decs)/(10**decs)
+
+
+width, height = 200, 200
+center = height//2
+white = (255, 255, 255)
+green = (0,128,0)
+
+
+# tkinter app parameters above
+
+
+def save():
+    # image1.save('C:/Users/yevhe/Downloads/file.png')
+    data = image1.convert('L')
+    data = data.resize((28, 28), PIL.Image.ANTIALIAS)
+    data = np.array(data)
+    data = np.true_divide(data, 255)
+    data *= -1
+    data += 1
+    data = trunc(data, 1)
+    res = net.feedforward(load_data(data))
+    for i in range(len(res)):
+        print(f"{i}:        {np.round(res[i], 3)} \n")
+    print("----------------------------------- \n \n")
+    plt.imshow(data, cmap=plt.cm.binary)
+    plt.show()
+
+def paint(event):
+    # python_green = "#476042"
+    x1, y1 = (event.x - 1), (event.y - 1)
+    x2, y2 = (event.x + 1), (event.y + 1)
+    cv.create_oval(x1, y1, x2, y2, fill="black",width=5)
+    draw.line([x1, y1, x2, y2],fill="black",width=5)
+
+# above functions are used for self networking testing
+
 
 def sigmoid(z):
     """ The sigmoid function """
@@ -108,8 +150,6 @@ class Network:
 
     def backprop(self, input, output):
         res = self.feedforward(input)
-        # print(self.layers[-1].error)
-        # print("\n \n \n")
         self.layers[-1].set_error((res - output) * sigmoid_prime(self.layers[-1].z))
         for i in range(len(self.layers) - 1, 0, -1):
             self.layers[i].change_bias_der(self.layers[i].error)
@@ -121,7 +161,7 @@ class Network:
 
 
 
-    def gradient_descent(self, eta = 3, m = 100, epochs = 600):
+    def gradient_descent(self, eta = 3, m = 10, epochs = 6000):
         n = 0  # number of current mini-batch
         for i in range(epochs):
             tmp = self.update_mini_batch(n, m)
@@ -140,6 +180,19 @@ class Network:
                 self.layers[j].bias_der *= 0
                 self.layers[j].weights_der *= 0
         self.test()
+        # print(self.feedforward(load_data(self.testimage[11])))
+        # data = Image.open('C:/Users/yevhe/Downloads/test.png').convert('L')
+        # data = data.resize((28, 28), Image.ANTIALIAS)
+        # data = np.array(data)
+        # data = np.true_divide(data, 255)
+        # data *= -1
+        # data += 1
+        # print(self.feedforward(load_data(data)))
+        # plt.imshow(self.testimage[11], cmap=plt.cm.binary)
+        # plt.show()
+
+
+
 
 
 
@@ -148,9 +201,11 @@ class Network:
         for image, label in zip(self.testimage, self.testlable):
             y = np.zeros(10)
             y[label] = 1
-            if np.sum(np.power(self.feedforward(load_data(image)) - y, 2)) < 0.5:
+            # rate += np.sum(np.power(self.feedforward(load_data(image)) - y, 2))
+            if np.sum(np.power(self.feedforward(load_data(image)) - y, 2)) < 0.2:
                 rate += 1
-        print(f"rate is {rate}/10000")
+        print(f"rate is {rate}/{len(self.testlable)}")
+        # print(f"Mean square error: {rate/len(self.testlable)}")
 
 
 
@@ -167,6 +222,31 @@ class Network:
 
 net = Network([784, 15, 10])
 net.gradient_descent()
+# for i in range(100):
+#     plt.imshow(net.imagearray[i], cmap=plt.cm.binary)
+#     plt.show()
+
+
+while True:
+    root = Tk()
+
+    cv = Canvas(root, width=width, height=height, bg='white')
+    cv.pack()
+
+
+    # memory only, not visible
+    image1 = PIL.Image.new("RGB", (width, height), white)
+    draw = ImageDraw.Draw(image1)
+
+    cv.pack(expand=YES, fill=BOTH)
+    cv.bind("<B1-Motion>", paint)
+
+    button = Button(text="save", command=save)
+    button.pack()
+    root.mainloop()
+
+# plt.imshow(net.testimage[10], cmap=plt.cm.binary)
+# plt.show()
 
 
 
@@ -179,7 +259,7 @@ net.gradient_descent()
 # for i in imagearray[0]:
 #     print(i)
 #
-# plt.imshow(imagearray[0], cmap=plt.cm.binary)
+# plt.imshow(net.testimage[106], cmap=plt.cm.binary)
 # plt.show()
 
 # a = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])

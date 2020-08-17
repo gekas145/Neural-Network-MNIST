@@ -30,15 +30,16 @@ def save():
     data = trunc(data, 1)
     res = net.feedforward(load_data(data))
     for i in range(len(res)):
-        print(f"{i}:        {np.round(res[i], 3)} \n")
+        if res[i] >= 0.1:
+            print(f"{i}:        {np.round(res[i], 3)} \n")
     print("----------------------------------- \n \n")
     plt.imshow(data, cmap=plt.cm.binary)
     plt.show()
 
 def paint(event):
     # python_green = "#476042"
-    x1, y1 = (event.x - 1), (event.y - 1)
-    x2, y2 = (event.x + 1), (event.y + 1)
+    x1, y1 = (event.x - 8), (event.y - 8)
+    x2, y2 = (event.x + 8), (event.y + 8)
     cv.create_oval(x1, y1, x2, y2, fill="black",width=5)
     draw.line([x1, y1, x2, y2],fill="black",width=5)
 
@@ -115,6 +116,7 @@ class Network:
         self.imagearray = np.true_divide(self.imagearray, 255)
         self.testimage = np.true_divide(self.testimage, 255)
         self.layers = []
+        self.learn_progress = np.array([0, 0, 0])  # for learn progress plotting
         for i in range(len(layers_sizes)):
             l = Network.Layer(layers_sizes[i])
             self.layers.append(l)
@@ -161,24 +163,39 @@ class Network:
 
 
 
-    def gradient_descent(self, eta = 3, m = 10, epochs = 6000):
+
+
+    def gradient_descent(self, eta = 3, m = 10, epochs = 30):
         n = 0  # number of current mini-batch
+        k = int(len(self.imagearray)/(m * epochs))  # quantity of mini-batches in one epoch
+        self.learn_progress = np.zeros(epochs)
         for i in range(epochs):
-            tmp = self.update_mini_batch(n, m)
-            n += m
-            images = tmp[0]
-            lables = tmp[1]
-            for image, label in zip(images, lables):
-                y = np.zeros(10)
-                y[label] = 1
-                self.backprop(load_data(image), y)
-            for j in range(1, len(self.layers)):
-                self.layers[j].bias_der = np.true_divide(self.layers[j].bias_der, m)
-                self.layers[j].weights_der = np.true_divide(self.layers[j].weights_der, m)
-                self.layers[j].bias -= self.layers[j].bias_der * eta
-                self.layers[j].weights -= self.layers[j].weights_der * eta
-                self.layers[j].bias_der *= 0
-                self.layers[j].weights_der *= 0
+
+            for j in range(len(self.testimage)):
+                w = np.zeros(10)  # right answer
+                w[self.testlable[j]] = 1
+                self.learn_progress[i] += np.sum(np.power(self.feedforward(load_data(self.testimage[j])) - w, 2))
+            self.learn_progress[i] /= len(self.testimage)
+
+            for t in range(k):
+                tmp = self.update_mini_batch(n, m)
+                n += m
+                images = tmp[0]
+                lables = tmp[1]
+
+                for image, label in zip(images, lables):
+                    y = np.zeros(10)
+                    y[label] = 1
+                    self.backprop(load_data(image), y)
+
+                for j in range(1, len(self.layers)):
+                    self.layers[j].bias_der = np.true_divide(self.layers[j].bias_der, m)
+                    self.layers[j].weights_der = np.true_divide(self.layers[j].weights_der, m)
+                    self.layers[j].bias -= self.layers[j].bias_der * eta
+                    self.layers[j].weights -= self.layers[j].weights_der * eta
+                    self.layers[j].bias_der *= 0
+                    self.layers[j].weights_der *= 0
+
         self.test()
         # print(self.feedforward(load_data(self.testimage[11])))
         # data = Image.open('C:/Users/yevhe/Downloads/test.png').convert('L')
@@ -190,6 +207,10 @@ class Network:
         # print(self.feedforward(load_data(data)))
         # plt.imshow(self.testimage[11], cmap=plt.cm.binary)
         # plt.show()
+        # for i in range(10):
+        #     print(self.testlable[i])
+        #     print(self.feedforward(load_data(self.testimage[i])))
+        #     print("----------------------")
 
 
 
@@ -199,10 +220,13 @@ class Network:
     def test(self):
         rate = 0
         for image, label in zip(self.testimage, self.testlable):
-            y = np.zeros(10)
-            y[label] = 1
+            # y = np.zeros(10)
+            # y[label] = 1
             # rate += np.sum(np.power(self.feedforward(load_data(image)) - y, 2))
-            if np.sum(np.power(self.feedforward(load_data(image)) - y, 2)) < 0.2:
+            # if np.sum(np.power(self.feedforward(load_data(image)) - y, 2)) < 0.2:
+            #     rate += 1
+            ans = self.feedforward(load_data(image))
+            if np.amax(ans) == ans[label]:
                 rate += 1
         print(f"rate is {rate}/{len(self.testlable)}")
         # print(f"Mean square error: {rate/len(self.testlable)}")
@@ -222,28 +246,37 @@ class Network:
 
 net = Network([784, 15, 10])
 net.gradient_descent()
-# for i in range(100):
-#     plt.imshow(net.imagearray[i], cmap=plt.cm.binary)
+
+y = net.learn_progress
+x = np.arange(len(y))
+plt.title("Network learning process")
+plt.xlabel("Epoch")
+plt.ylabel("Cost")
+plt.plot(x,y)
+plt.show()
+
+# for i in range(10):
+#     plt.imshow(net.testimage[i], cmap=plt.cm.binary)
 #     plt.show()
 
 
-while True:
-    root = Tk()
-
-    cv = Canvas(root, width=width, height=height, bg='white')
-    cv.pack()
-
-
-    # memory only, not visible
-    image1 = PIL.Image.new("RGB", (width, height), white)
-    draw = ImageDraw.Draw(image1)
-
-    cv.pack(expand=YES, fill=BOTH)
-    cv.bind("<B1-Motion>", paint)
-
-    button = Button(text="save", command=save)
-    button.pack()
-    root.mainloop()
+# while True:
+#     root = Tk()
+#
+#     cv = Canvas(root, width=width, height=height, bg='white')
+#     cv.pack()
+#
+#
+#     # memory only, not visible
+#     image1 = PIL.Image.new("RGB", (width, height), white)
+#     draw = ImageDraw.Draw(image1)
+#
+#     cv.pack(expand=YES, fill=BOTH)
+#     cv.bind("<B1-Motion>", paint)
+#
+#     button = Button(text="save", command=save)
+#     button.pack()
+#     root.mainloop()
 
 # plt.imshow(net.testimage[10], cmap=plt.cm.binary)
 # plt.show()

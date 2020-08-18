@@ -6,58 +6,46 @@ from PIL import ImageTk, Image, ImageDraw
 import PIL
 from tkinter import *
 
-def trunc(values, decs=0):
-    return np.trunc(values*10**decs)/(10**decs)
-
-
-width, height = 200, 200
-center = height//2
-white = (255, 255, 255)
-green = (0,128,0)
+# def trunc(values, decs=0):
+#     return np.trunc(values*10**decs)/(10**decs)
+#
+#
+# width, height = 200, 200
+# center = height//2
+# white = (255, 255, 255)
+# green = (0,128,0)
 
 
 # tkinter app parameters above
 
 
-def save():
+# def save():
     # image1.save('C:/Users/yevhe/Downloads/file.png')
-    data = image1.convert('L')
-    data = data.resize((28, 28), PIL.Image.ANTIALIAS)
-    data = np.array(data)
-    data = np.true_divide(data, 255)
-    data *= -1
-    data += 1
-    data = trunc(data, 1)
-    res = net.feedforward(load_data(data))
-    for i in range(len(res)):
-        if res[i] >= 0.1:
-            print(f"{i}:        {np.round(res[i], 3)} \n")
-    print("----------------------------------- \n \n")
-    plt.imshow(data, cmap=plt.cm.binary)
-    plt.show()
+    # data = image1.convert('L')
+    # data = data.resize((28, 28), PIL.Image.ANTIALIAS)
+    # data = np.array(data)
+    # data = np.true_divide(data, 255)
+    # data *= -1
+    # data += 1
+    # data = trunc(data, 1)
+    # res = net.feedforward(load_data(data))
+    # for i in range(len(res)):
+    #     if res[i] >= 0.1:
+    #         print(f"{i}:        {np.round(res[i], 3)} \n")
+    # print("----------------------------------- \n \n")
+    # plt.imshow(data, cmap=plt.cm.binary)
+    # plt.show()
 
-def paint(event):
+# def paint(event):
     # python_green = "#476042"
-    x1, y1 = (event.x - 8), (event.y - 8)
-    x2, y2 = (event.x + 8), (event.y + 8)
-    cv.create_oval(x1, y1, x2, y2, fill="black",width=5)
-    draw.line([x1, y1, x2, y2],fill="black",width=5)
+    # x1, y1 = (event.x - 8), (event.y - 8)
+    # x2, y2 = (event.x + 8), (event.y + 8)
+    # cv.create_oval(x1, y1, x2, y2, fill="black",width=5)
+    # draw.line([x1, y1, x2, y2],fill="black",width=5)
 
 # above functions are used for self networking testing
 
 
-def sigmoid(z):
-    """ The sigmoid function """
-    return 1/(1+np.exp(-z))
-
-
-def sigmoid_prime(z):
-    """  Derivative of the sigmoid function """
-    return sigmoid(z)*(1-sigmoid(z))
-
-def load_data(x):
-    """ Reshapes matrix which represents an image into single 1-D array """
-    return x.reshape(784)
 
 
 class Network:
@@ -101,9 +89,6 @@ class Network:
         def change_weights_der(self, delta_weights_der, n):
             self.weights_der[n] += delta_weights_der
 
-        def __repr__(self):
-            return "Bias \n" + str(self.bias) + "\n " + "\n" + "Weights \n" + str(self.weights)
-
 
 
 
@@ -125,11 +110,18 @@ class Network:
                 self.layers[i].set_weights_der(np.zeros((layers_sizes[i], layers_sizes[i-1])))
 
 
-    def Print(self):
-        for i in range(len(self.layers)):
-            print(f"Layer {i+1}")
-            print(self.layers[i])
 
+    def sigmoid(self, z):
+        """ The sigmoid function """
+        return 1 / (1 + np.exp(-z))
+
+    def sigmoid_prime(self, z):
+        """  Derivative of the sigmoid function """
+        return self.sigmoid(z) * (1 - self.sigmoid(z))
+
+    def load_data(self, x):
+        """ Reshapes matrix which represents an image into single 1-D array """
+        return x.reshape(784)
 
 
     def feedforward(self, input):
@@ -138,7 +130,7 @@ class Network:
         for i in range(1, len(self.layers)):
             z = np.dot(self.layers[i].weights, self.layers[i-1].activations) + self.layers[i].bias
             self.layers[i].set_z(z)
-            z = sigmoid(z)
+            z = self.sigmoid(z)
             self.layers[i].set_activations(z)
 
         return self.layers[-1].activations
@@ -152,14 +144,14 @@ class Network:
 
     def backprop(self, input, output):
         res = self.feedforward(input)
-        self.layers[-1].set_error((res - output) * sigmoid_prime(self.layers[-1].z))
+        self.layers[-1].set_error((res - output) * self.sigmoid_prime(self.layers[-1].z))
         for i in range(len(self.layers) - 1, 0, -1):
             self.layers[i].change_bias_der(self.layers[i].error)
             for j in range(len(self.layers[i].error)):
                 self.layers[i].change_weights_der(self.layers[i-1].activations * self.layers[i].error[j], j)
             if i == 1:
                 break
-            self.layers[i-1].set_error(np.dot(np.transpose(self.layers[i].weights), self.layers[i].error) * sigmoid_prime(self.layers[i-1].z))
+            self.layers[i-1].set_error(np.dot(np.transpose(self.layers[i].weights), self.layers[i].error) * self.sigmoid_prime(self.layers[i-1].z))
 
 
 
@@ -174,7 +166,7 @@ class Network:
             for j in range(len(self.testimage)):
                 w = np.zeros(10)  # right answer
                 w[self.testlable[j]] = 1
-                self.learn_progress[i] += np.sum(np.power(self.feedforward(load_data(self.testimage[j])) - w, 2))
+                self.learn_progress[i] += np.sum(np.power(self.feedforward(self.load_data(self.testimage[j])) - w, 2))
             self.learn_progress[i] /= len(self.testimage)
 
             for t in range(k):
@@ -186,7 +178,7 @@ class Network:
                 for image, label in zip(images, lables):
                     y = np.zeros(10)
                     y[label] = 1
-                    self.backprop(load_data(image), y)
+                    self.backprop(self.load_data(image), y)
 
                 for j in range(1, len(self.layers)):
                     self.layers[j].bias_der = np.true_divide(self.layers[j].bias_der, m)
@@ -225,7 +217,7 @@ class Network:
             # rate += np.sum(np.power(self.feedforward(load_data(image)) - y, 2))
             # if np.sum(np.power(self.feedforward(load_data(image)) - y, 2)) < 0.2:
             #     rate += 1
-            ans = self.feedforward(load_data(image))
+            ans = self.feedforward(self.load_data(image))
             if np.amax(ans) == ans[label]:
                 rate += 1
         print(f"rate is {rate}/{len(self.testlable)}")
@@ -244,7 +236,7 @@ class Network:
 
 
 
-net = Network([784, 15, 10])
+net = Network([784, 30, 10])
 net.gradient_descent()
 
 y = net.learn_progress

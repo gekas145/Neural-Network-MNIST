@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import idx2numpy
+import json
+
 
 
 
@@ -80,6 +82,7 @@ class Network:
         if not large_weights:
             self.weights_init()
         n = 0  # number of current mini-batch
+        # might 50 000 instead of len(self.imagearray)
         k = int(len(self.imagearray)/(m * epochs))  # quantity of mini-batches in one epoch
         self.learn_progress = np.zeros(epochs)
         for i in range(epochs):
@@ -118,7 +121,7 @@ class Network:
 
 
     def weights_init(self):
-        """ Smart weights initializing with mean 0 and std deviation 1/sqrt(num_of_inputs)"""
+        """ Smart weights initializing with mean 0 and std deviation 1/sqrt(num_of_inputs) """
         for i in range(1, len(self.layers)):
             self.layers[i].weights = np.random.normal(0, 1/np.sqrt(len(self.layers[i].weights[0])), [len(self.layers[i].weights), len(self.layers[i].weights[0])])
 
@@ -139,26 +142,51 @@ class Network:
         print(f"rate is {rate}/{len(self.testlable)}")
         # print(f"Mean square error: {rate/len(self.testlable)}")
 
+    def save(self, filename='C:/Users/yevhe/Downloads/samples/network.json'):
+        """ Saves trained network to file with path `filename` """
+        weights_list = [[0] for i in range(len(self.layers) - 1)]
+        bias_list = [[0] for i in range(len(self.layers) - 1)]
+
+        for i in range(1, len(self.layers)):
+            weights_list[i-1] = self.layers[i].weights.tolist()
+            bias_list[i-1] = self.layers[i].bias.tolist()
+
+        data = {"weights": weights_list,
+                "bias": bias_list}
+        f = open(filename, "w")
+        json.dump(data, f)
+        f.close()
+
+    @staticmethod
+    def load(filename='C:/Users/yevhe/Downloads/samples/network.json'):
+        """ Loads trained network from file with path `filename` """
+        f = open(filename, "r")
+        data = json.load(f)
+        f.close()
+        net = Network([784, 100, 10])
+
+        for i in range(1, len(net.layers)):
+            net.layers[i].weights = np.array(data["weights"][i-1])
+            net.layers[i].bias = np.array(data["bias"][i-1])
+
+        return net
+
+
 
 
 
 def main():
-    net = Network([784, 100, 10])
-    net.gradient_descent()
+    # net = Network([784, 100, 10])
+    # net.gradient_descent()
+    # net.save()
+    net2 = Network.load()
+    for i in range(10):
+        print(net2.feedforward(net2.load_data(net2.testimage[i])))
+        print(net2.testlable[i])
+        print("------------------------")
 
-    net2 = Network([784, 30, 10])
-    net2.gradient_descent(regular=False, eta=3, large_weights=True)
 
-    y = net.learn_progress
-    x = np.arange(len(y))
-    y2 = net2.learn_progress
 
-    plt.title("Network learning process")
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
-    plt.plot(x, y2)
-    plt.plot(x, y)
-    plt.show()
 
 
 if __name__ == '__main__':

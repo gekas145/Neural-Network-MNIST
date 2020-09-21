@@ -1,12 +1,12 @@
 import network2
-
-net = network2.Network([784, 100, 10])
-net.gradient_descent()
-
+import numpy as np
+# net = network2.Network([784, 100, 10])
+# net.gradient_descent()
+net = network2.Network.load()
 from PIL import ImageTk, Image, ImageDraw
 import PIL
 from tkinter import *
-
+import matplotlib.pyplot as plt
 
 # App for creating and examining own examples for MNIST handwritten digits recognition problem
 
@@ -24,7 +24,7 @@ green = (0,128,0)
 # tkinter app parameters above
 
 
-def save():
+def submit():
     """ Converts drawn image to 784 dim numpy array and prints out network's decision"""
     data = image1.convert('L')
     data = data.resize((28, 28), PIL.Image.ANTIALIAS)
@@ -33,7 +33,7 @@ def save():
     data *= -1
     data += 1
     data = trunc(data, 1)
-    res = net.feedforward(net.load_data(data))
+    res = net.feedforward(network2.Network.load_data(data))
     for i in range(len(res)):
         if res[i] >= 0.1:
             print(f"{i}:        {np.round(res[i], 3)} \n")
@@ -62,6 +62,6 @@ while True:
     cv.pack(expand=YES, fill=BOTH)
     cv.bind("<B1-Motion>", paint)
 
-    button = Button(text="save", command=save)
+    button = Button(text="submit", command=submit)
     button.pack()
     root.mainloop()

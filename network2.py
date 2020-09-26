@@ -7,6 +7,7 @@ import json
 
 
 class Network:
+
     class Layer:
         """ Help class which represents layers of neural network """
         def __init__(self, n):
@@ -34,15 +35,18 @@ class Network:
                 self.layers[i].weights = np.random.randn(layers_sizes[i], layers_sizes[i-1])
                 self.layers[i].weights_der = np.zeros((layers_sizes[i], layers_sizes[i-1]))
 
-    def sigmoid(self, z):
+    @staticmethod
+    def sigmoid(z):
         """ The sigmoid function """
         return 1 / (1 + np.exp(-z))
 
-    def sigmoid_prime(self, z):
+    @staticmethod
+    def sigmoid_prime(z):
         """  Derivative of the sigmoid function """
         return self.sigmoid(z) * (1 - self.sigmoid(z))
 
-    def load_data(self, x):
+    @staticmethod
+    def load_data(x):
         """ Reshapes matrix which represents an image into single 1-D array """
         return x.reshape(784)
 
@@ -53,7 +57,7 @@ class Network:
         for i in range(1, len(self.layers)):
             z = np.dot(self.layers[i].weights, self.layers[i - 1].activations) + self.layers[i].bias
             self.layers[i].z = z
-            self.layers[i].activations = self.sigmoid(z)
+            self.layers[i].activations = Network.sigmoid(z)
 
         return self.layers[-1].activations
 
@@ -72,7 +76,7 @@ class Network:
                 self.layers[i].weights_der[j] += self.layers[i-1].activations * self.layers[i].error[j]
             if i == 1:
                 break
-            self.layers[i-1].error = np.dot(np.transpose(self.layers[i].weights), self.layers[i].error) * self.sigmoid_prime(self.layers[i-1].z)
+            self.layers[i-1].error = np.dot(np.transpose(self.layers[i].weights), self.layers[i].error) * Network.sigmoid_prime(self.layers[i-1].z)
 
 
 
@@ -90,7 +94,7 @@ class Network:
             rate = 0  # right answers count
 
             for j in range(len(self.testimage)):
-                ans = self.feedforward(self.load_data(self.testimage[j]))
+                ans = self.feedforward(Network.load_data(self.testimage[j]))
                 if np.amax(ans) == ans[self.testlable[j]]:
                     rate += 1
             self.learn_progress[i] = rate/100
@@ -104,7 +108,7 @@ class Network:
                 for image, label in zip(images, lables):
                     y = np.zeros(10)
                     y[label] = 1
-                    self.backprop(self.load_data(image), y)
+                    self.backprop(Network.load_data(image), y)
 
                 for j in range(1, len(self.layers)):
                     self.layers[j].bias_der = np.true_divide(self.layers[j].bias_der, m)
@@ -136,7 +140,7 @@ class Network:
             # rate += np.sum(np.power(self.feedforward(load_data(image)) - y, 2))
             # if np.sum(np.power(self.feedforward(load_data(image)) - y, 2)) < 0.2:
             #     rate += 1
-            ans = self.feedforward(self.load_data(image))
+            ans = self.feedforward(Network.load_data(image))
             if np.amax(ans) == ans[label]:
                 rate += 1
         print(f"rate is {rate}/{len(self.testlable)}")
@@ -181,7 +185,7 @@ def main():
     # net.save()
     net2 = Network.load()
     for i in range(10):
-        print(net2.feedforward(net2.load_data(net2.testimage[i])))
+        print(net2.feedforward(Network.load_data(net2.testimage[i])))
         print(net2.testlable[i])
         print("------------------------")
 

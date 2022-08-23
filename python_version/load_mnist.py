@@ -1,0 +1,32 @@
+import numpy as np
+import zipfile
+
+
+def load_mnist():
+    def prepare_images(buffer):
+        prepared = np.frombuffer(buffer, offset=16, dtype=np.uint8).astype(np.float32)
+        return prepared.reshape(len(buffer) // image_size ** 2, image_size * image_size) / 255
+
+    image_size = 28
+
+    file_names = ['t10k-images.idx3-ubyte',
+                  't10k-labels.idx1-ubyte',
+                  'train-images.idx3-ubyte',
+                  'train-labels.idx1-ubyte']
+    data = []
+    with zipfile.ZipFile('../trainTestData.zip', 'r') as zf:
+        for file in file_names:
+            with zf.open(file, 'r') as f:
+                data.append(f.read())
+                f.close()
+        zf.close()
+    del f
+    del zf
+
+    X_train = prepare_images(data[2])
+    X_test = prepare_images(data[0])
+
+    y_train = np.frombuffer(data[3], offset=8, dtype=np.uint8).astype(np.int64)
+    y_test = np.frombuffer(data[1], offset=8, dtype=np.uint8).astype(np.int64)
+
+    return X_train, X_test, y_train, y_test

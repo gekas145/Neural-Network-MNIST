@@ -2,7 +2,7 @@ import network2
 import numpy as np
 # net = network2.Network([784, 100, 10])
 # net.gradient_descent()
-net = network2.Network.load()
+net = network2.Network.load('network2.json')
 from PIL import ImageTk, Image, ImageDraw
 import PIL
 from tkinter import *
@@ -33,7 +33,7 @@ def submit():
     data *= -1
     data += 1
     data = trunc(data, 1)
-    res = net.feedforward(network2.Network.load_data(data))
+    res = net.feedforward(data.reshape(28**2))
     for i in range(len(res)):
         if res[i] >= 0.1:
             print(f"{i}:        {np.round(res[i], 3)} \n")

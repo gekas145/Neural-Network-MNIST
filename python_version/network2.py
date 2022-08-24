@@ -23,6 +23,7 @@ class Network:
 
     def __init__(self, layers_sizes):
         self.layers = [Network.Layer(layers_sizes[0], True)]
+        self.learn_progress = None
         for i in range(1, len(layers_sizes)):
             self.layers.append(Network.Layer(layers_sizes[i]))
             self.layers[i].weights = np.random.randn(layers_sizes[i], layers_sizes[i - 1])
@@ -38,6 +39,10 @@ class Network:
         """  Derivative of the sigmoid function """
         return Network.sigmoid(raw) * (1 - Network.sigmoid(raw))
 
+    @staticmethod
+    def update_mini_batch(X, y, n, m):
+        return X[n: min(n + m, len(X))], y[n: min(n + m, len(y))]
+
     def feedforward(self, input):
         """  Analyses input and returns decision """
         self.layers[0].activations = input
@@ -48,9 +53,9 @@ class Network:
 
         return self.layers[-1].activations
 
-    @staticmethod
-    def update_mini_batch(X, y, n, m):
-        return X[n: min(n + m, len(X))], y[n: min(n + m, len(y))]
+    def predict(self, input):
+        ans = self.feedforward(input)
+        return np.argmax(ans)
 
     def backprop(self, input, output):
         res = self.feedforward(input)
@@ -64,11 +69,18 @@ class Network:
             self.layers[i - 1].error = np.dot(np.transpose(self.layers[i].weights),
                                               self.layers[i].error) * Network.sigmoid_prime(self.layers[i - 1].raw)
 
-    def gradient_descent(self, X, y, eta=0.5, mini_batch_size=10, epochs=30, lmbda=5, regular=True):
-        self.learn_progress = np.zeros(epochs)
+    def gradient_descent(self, X, y,
+                         X_test=None, y_test=None,
+                         eta=0.5, mini_batch_size=10, epochs=30, lmbda=5):
+        self.learn_progress = np.zeros(epochs + 1)
         mini_batch_num = len(X) // mini_batch_size + 1
         for i in range(epochs):
-            print(f'EPOCH {i+1}/{epochs}')
+            accuracy_str = ''
+            if X_test is not None and y_test is not None:
+                accuracy = self.test(X_test, y_test)
+                accuracy_str += f', accuracy: {accuracy}'
+                self.learn_progress[i] = accuracy
+            print(f'[EPOCH {i+1}/{epochs}]' + accuracy_str)
             current_mini_batch_num = 0  # number of current mini-batch
             for t in range(mini_batch_num):
                 mini_batch = Network.update_mini_batch(X, y, current_mini_batch_num, mini_batch_size)
@@ -85,13 +97,11 @@ class Network:
                     self.layers[j].bias_der = np.true_divide(self.layers[j].bias_der, mini_batch_size)
                     self.layers[j].weights_der = np.true_divide(self.layers[j].weights_der, mini_batch_size)
                     self.layers[j].bias -= self.layers[j].bias_der * eta
-                    if regular:
-                        self.layers[j].weights -= self.layers[j].weights_der * eta + \
+                    self.layers[j].weights -= self.layers[j].weights_der * eta + \
                                                   np.true_divide(self.layers[j].weights * eta * lmbda, len(y))
-                    else:
-                        self.layers[j].weights -= self.layers[j].weights_der * eta
                     self.layers[j].bias_der *= 0
                     self.layers[j].weights_der *= 0
+        self.learn_progress[-1] = self.test(X_test, y_test)
 
     def weights_init(self):
         """ Smart weights initializing with mean 0 and std deviation 1/sqrt(num_of_inputs) """
@@ -102,16 +112,10 @@ class Network:
     def test(self, X, y):
         rate = 0
         for image, label in zip(X, y):
-            # y = np.zeros(10)
-            # y[label] = 1
-            # rate += np.sum(np.power(self.feedforward(load_data(image)) - y, 2))
-            # if np.sum(np.power(self.feedforward(load_data(image)) - y, 2)) < 0.2:
-            #     rate += 1
-            ans = self.feedforward(image)
-            if np.amax(ans) == ans[label]:
+            prediction = self.predict(image)
+            if prediction == label:
                 rate += 1
-        print(f"rate is {rate}/{len(y)}")
-        # print(f"Mean square error: {rate/len(self.testlable)}")
+        return rate/len(X)
 
     def save(self, filename='network.json'):
         """ Saves trained network to file with path `filename` """
@@ -145,15 +149,23 @@ class Network:
 
 def main():
     X_train, X_test, y_train, y_test = load_mnist()
-    net = Network([784, 100, 10])
-    net.gradient_descent(X_train, y_train, epochs=3)
-    net.test(X_test, y_test)
-    net.save('network2.json')
-    # net2 = Network.load()
-    # for i in range(10):
-    #     print(net2.feedforward(Network.load_data(net2.testimage[i])))
-    #     print(net2.testlable[i])
-    #     print("------------------------")
+    net = Network.load('network2.json')
+    print(net.test(X_test, y_test))
+    # net = Network([784, 100, 10])
+    # net.gradient_descent(X_train, y_train, X_test, y_test, epochs=10)
+    # net.save('network2.json')
+
+    # net1 = Network([784, 100, 10])
+    # net1.gradient_descent(X_train, y_train, X_test, y_test, epochs=10, lmbda=0)
+
+    # epochs = len(net.learn_progress)
+    # plt.plot(range(1, epochs), net.learn_progress[1:epochs], label='Yes')
+    # plt.plot(range(1, epochs), net1.learn_progress[1:epochs], label='No')
+    # plt.legend(title='Regularization')
+    # plt.title('Learning process')
+    # plt.xlabel('epoch')
+    # plt.ylabel('accuracy on test set')
+    # plt.show()
 
 
 if __name__ == '__main__':

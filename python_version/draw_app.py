@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw
 import PIL
 from tkinter import *
 import matplotlib.pyplot as plt
+import functools
 
 net = network2.Network.load('network2.json')
 
@@ -22,7 +23,8 @@ white = 'white'
 black = 'black'
 background_color = white
 drawing_color = black
-zoom = 1
+zoom = 2
+canvas_padding = 100
 
 
 def submit():
@@ -43,16 +45,16 @@ def submit():
     plt.show()
 
 
-def paint(event):
-    """ Draws image """
+def paint(event, color):
+    """ Draws or erases image """
     x1, y1 = (event.x - 8), (event.y - 8)
     x2, y2 = (event.x + 8), (event.y + 8)
-    cv.create_rectangle(x1, y1, x2, y2, fill=drawing_color, width=5)
-    draw.line([x1/zoom, y1/zoom, x2/zoom, y2/zoom], fill=drawing_color, width=5)
+    cv.create_rectangle(x1, y1, x2, y2, fill=color, width=0)
+    draw.rectangle([x1/zoom, y1/zoom, x2/zoom, y2/zoom], fill=color, width=0)
 
 
-def erase(event):
-    """ Erase canvas contents """
+def delete_all(event):
+    """ Delete all canvas contents """
     cv.delete("all")
     draw.rectangle([0, 0, width, height], fill=background_color)
 
@@ -64,9 +66,10 @@ cv = Canvas(root, width=width*zoom, height=height*zoom, bg=background_color)
 drawing = PIL.Image.new('RGB', (width, height), background_color)
 draw = ImageDraw.Draw(drawing)
 
-cv.pack(expand=YES, fill=BOTH)
-cv.bind('<B1-Motion>', paint)
-cv.bind('<Button-2>', erase)
+cv.pack(expand=YES, fill=BOTH, padx=(0, canvas_padding))
+cv.bind('<B1-Motion>', functools.partial(paint, color=drawing_color))
+cv.bind('<B3-Motion>', functools.partial(paint, color=background_color))
+cv.bind('<Button-2>', delete_all)
 
 button = Button(text='submit', command=submit)
 button.pack()

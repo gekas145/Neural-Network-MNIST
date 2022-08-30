@@ -17,13 +17,11 @@ def trunc(values, decs=0):
 
 
 # tkinter app parameters
-width, height = 200, 200
+width, height = 400, 400
 center = height // 2
-white = 'white'
-black = 'black'
-background_color = white
-drawing_color = black
-zoom = 2
+background_color = 'white'
+drawing_color = 'black'
+drawing_density = 10
 canvas_padding = 100
 
 
@@ -47,25 +45,26 @@ def submit():
 
 def paint(event, color):
     """ Draws or erases image """
-    x1, y1 = (event.x - 8), (event.y - 8)
-    x2, y2 = (event.x + 8), (event.y + 8)
+    x1, y1 = (event.x - drawing_density), (event.y - drawing_density)
+    x2, y2 = (event.x + drawing_density), (event.y + drawing_density)
     cv.create_rectangle(x1, y1, x2, y2, fill=color, width=0)
-    draw.rectangle([x1/zoom, y1/zoom, x2/zoom, y2/zoom], fill=color, width=0)
+    draw.rectangle([x1, y1, x2, y2], fill=color, width=0)
 
 
 def delete_all(event):
-    """ Delete all canvas contents """
+    """ Erase all canvas contents """
     cv.delete("all")
     draw.rectangle([0, 0, width, height], fill=background_color)
 
 
-root = Tk()
-
-cv = Canvas(root, width=width*zoom, height=height*zoom, bg=background_color)
-
+# this app doesn't use direct drawing from tkinter canvas as it was hard(not possible?) to implement
+# instead it draws simultaneously on PIL image(later fed to network) and tkinter canvas(for a user to see)
 drawing = PIL.Image.new('RGB', (width, height), background_color)
 draw = ImageDraw.Draw(drawing)
 
+root = Tk()
+
+cv = Canvas(root, width=width, height=height, bg=background_color)
 cv.pack(expand=YES, fill=BOTH, padx=(0, canvas_padding))
 cv.bind('<B1-Motion>', functools.partial(paint, color=drawing_color))
 cv.bind('<B3-Motion>', functools.partial(paint, color=background_color))

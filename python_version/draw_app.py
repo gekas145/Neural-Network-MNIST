@@ -22,10 +22,15 @@ center = height // 2
 background_color = 'white'
 drawing_color = 'black'
 drawing_density = 10
-canvas_padding = 100
+canvas_padding = 200
+prediction_rectangle_height = 5
+prediction_rectangle_left_padding = 5
+prediction_rectangle_top_padding = 50
+prediction_rectangle_gap = 20
+prediction_rectangle_max_length = 50
 
 
-def submit():
+def analyze():
     """ Converts drawn image to 784 dim numpy array and prints out network's decision"""
     data = drawing.convert('L')
     data = data.resize((28, 28), PIL.Image.ANTIALIAS)
@@ -35,12 +40,7 @@ def submit():
     data += 1
     data = trunc(data, 2)
     res = net.feedforward(data.reshape(28 ** 2))
-    for i in range(len(res)):
-        if res[i] >= 0.1:
-            print(f"{i}:        {np.round(res[i], 3)} \n")
-    print("----------------------------------- \n \n")
-    plt.imshow(data, cmap=plt.cm.binary)
-    plt.show()
+    update_prediction_canvas(res)
 
 
 def paint(event, color):
@@ -49,12 +49,23 @@ def paint(event, color):
     x2, y2 = (event.x + drawing_density), (event.y + drawing_density)
     cv.create_rectangle(x1, y1, x2, y2, fill=color, width=0)
     draw.rectangle([x1, y1, x2, y2], fill=color, width=0)
+    analyze()
 
 
 def delete_all(event):
     """ Erase all canvas contents """
-    cv.delete("all")
+    cv.delete('all')
     draw.rectangle([0, 0, width, height], fill=background_color)
+
+
+def update_prediction_canvas(res):
+    cv1.delete('all')
+    for i in range(len(res)):
+        cv1.create_rectangle(rectangles[i][0],
+                             rectangles[i][1],
+                             rectangles[i][0] + prediction_rectangle_max_length * res[i],
+                             rectangles[i][1] + prediction_rectangle_height,
+                             fill='black')
 
 
 # this app doesn't use direct drawing from tkinter canvas as it was hard(not possible?) to implement
@@ -65,11 +76,19 @@ draw = ImageDraw.Draw(drawing)
 root = Tk()
 
 cv = Canvas(root, width=width, height=height, bg=background_color)
-cv.pack(expand=YES, fill=BOTH, padx=(0, canvas_padding))
+cv.pack(expand=YES, fill=BOTH, side='left')
 cv.bind('<B1-Motion>', functools.partial(paint, color=drawing_color))
 cv.bind('<B3-Motion>', functools.partial(paint, color=background_color))
 cv.bind('<Button-2>', delete_all)
+cv1 = Canvas(root, width=canvas_padding, height=height, bg=background_color)
+cv1.pack(expand=YES, fill=BOTH, side='right')
 
-button = Button(text='submit', command=submit)
-button.pack()
+rectangles = []
+for i in range(10):
+    rectangles.append((prediction_rectangle_left_padding,
+                       i * prediction_rectangle_gap + prediction_rectangle_top_padding))
+
+for rect in rectangles:
+    cv1.create_rectangle(rect[0], rect[1], rect[0] + 10, rect[1] + prediction_rectangle_height, fill='black')
+
 root.mainloop()

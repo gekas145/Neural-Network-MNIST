@@ -24,10 +24,11 @@ drawing_color = 'black'
 drawing_density = 10
 canvas_padding = 200
 prediction_rectangle_height = 5
-prediction_rectangle_left_padding = 5
+prediction_rectangle_left_padding = 10
 prediction_rectangle_top_padding = 50
 prediction_rectangle_gap = 20
 prediction_rectangle_max_length = 50
+prediction_rectangle_label_distance = 10
 
 
 def analyze():
@@ -60,12 +61,15 @@ def delete_all(event):
 
 def update_prediction_canvas(res):
     cv1.delete('all')
+    cv1.create_text(canvas_padding // 2, 10, text='Network prediction')
     for i in range(len(res)):
+        cv1.create_text(rectangles[i][0] - prediction_rectangle_label_distance,
+                        rectangles[i][1], text=str(i) + ': ')
         cv1.create_rectangle(rectangles[i][0],
                              rectangles[i][1],
                              rectangles[i][0] + prediction_rectangle_max_length * res[i],
                              rectangles[i][1] + prediction_rectangle_height,
-                             fill='black')
+                             fill=drawing_color)
 
 
 # this app doesn't use direct drawing from tkinter canvas as it was hard(not possible?) to implement
@@ -85,10 +89,10 @@ cv1.pack(expand=YES, fill=BOTH, side='right')
 
 rectangles = []
 for i in range(10):
-    rectangles.append((prediction_rectangle_left_padding,
-                       i * prediction_rectangle_gap + prediction_rectangle_top_padding))
+    rectangles.append((prediction_rectangle_left_padding + prediction_rectangle_label_distance,
+                       i * prediction_rectangle_gap + prediction_rectangle_top_padding +
+                       prediction_rectangle_label_distance))
 
-for rect in rectangles:
-    cv1.create_rectangle(rect[0], rect[1], rect[0] + 10, rect[1] + prediction_rectangle_height, fill='black')
+update_prediction_canvas(np.zeros(10))
 
 root.mainloop()

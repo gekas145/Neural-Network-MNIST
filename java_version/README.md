@@ -1,4 +1,4 @@
-# Sigmoidal neural network
+# Java version
 Written in Java. Provided with application for drawing own examples. <br />
 Application interface: <br />
 <!-- <img src="drawApp.png" width="400" height="300"> -->

@@ -1,8 +1,8 @@
 # Python version
 
-Sigmoidal feedforward neural network for recognizing handwritten digits. Uses mini batch stochastic gradient descent for learning.
+Sigmoidal feedforward neural network for recognizing handwritten digits. Uses mini batch stochastic gradient descent for learning. Training parameters can be found in `network2.py`.
 
-See how usage of regularization and smart weights initializing contributes to convergence:
+How usage of regularization and smart weights initializing contributes to convergence:
 
 <p float="left">
   <img src="https://github.com/gekas145/Neural-Network-MNIST/blob/master/python_version/learn_process.png" alt="drawing" width="500" height="400"/>

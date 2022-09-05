@@ -5,9 +5,10 @@ Sigmoidal feedforward neural network for recognizing handwritten digits. Uses mi
 See how usage of regularization and smart weights initializing contributes to convergence:
 
 <p float="left">
-  <img src="learn_process.png" alt="drawing"/>
-  <img src="weights_init.png" alt="drawing"/>
+  <img src="https://github.com/gekas145/Neural-Network-MNIST/blob/master/python_version/learn_process.png" alt="drawing" width="500" height="400"/>
+  <img src="https://github.com/gekas145/Neural-Network-MNIST/blob/master/python_version/weights_init.png" alt="drawing" width="500" height="400"/>
 </p>
+
 
 Test the pretrained net with own examples using drawing app:
 

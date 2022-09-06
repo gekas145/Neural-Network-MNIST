@@ -103,7 +103,8 @@ class Network:
                                               np.true_divide(self.layers[j].weights * eta * lmbda, len(y))
                     self.layers[j].bias_der *= 0
                     self.layers[j].weights_der *= 0
-        self.learn_progress[-1] = self.test(X_test, y_test)
+        if X_test is not None and y_test is not None:
+            self.learn_progress[-1] = self.test(X_test, y_test)
 
     def test(self, X, y):
         rate = 0
